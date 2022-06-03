@@ -1,0 +1,195 @@
+#!/usr/bin/env python
+
+#------------------------#
+# config section - start #
+#------------------------#
+
+# For memory monitoring add your own
+# In linux run command - $ cat /proc/meminfo | awk {'print $1'}
+# Pick favorites and add to list
+
+# Make new lists if needed
+virtualMemory = [
+	"MemTotal:",
+	"MemFree:"
+]
+
+swap = [
+	"SwapTotal:",
+	"SwapFree:"
+]
+
+# Add new sections if you made new lists
+memList = [
+	(virtualMemory, "virtualMemory"),
+	(swap, "swap")
+]
+
+#----------------------+------------------------#
+# config section - end | import section - start #
+#----------------------+------------------------#
+
+# For reading information form imput
+import sys
+
+#----------------------+---------------------#
+# import section - end | CPU section - start #
+#----------------------+---------------------#
+
+# Function to calculate times values to %
+def calculateTimes(inputList):
+
+	# Go trough every line
+	for i, x in enumerate(inputList[1:]):
+
+		# Variable to find sum in columns
+		sum = 0
+
+		# Find sum of all columns
+		for y in x[1:]:
+
+			# Increment total sum with number from column
+			sum+=int(y)
+
+		# Replace numbers with %
+		for j, yy in enumerate(x[1:]):
+
+			# calculate the %
+			inputList[i+1][j+1] = round(int(yy) * 100 / (sum), 2)
+
+	return inputList
+
+def cpuInfo():
+	print("cpu")
+
+	# Variables
+	cores = -1
+	sumTimes = [["cpu", "user", "system", "idle", "iowait", "irq", "softirq", "steal", "guest", "guest_nice"]]
+	times = [["cpu", "user", "system", "idle", "iowait", "irq", "softirq", "steal", "guest", "guest_nice"]]
+	loadAvg = [["1 min", "5 min", "15 min"]]
+
+	# Open stat
+	with open("/proc/stat") as file:
+
+		# Read file to variable
+		fileContent = file.read()
+
+		# Close file
+		file.close()
+
+		# Process fileContent line by line
+		for line in fileContent.split("\n"):
+
+			# Split line to get list
+			lineContent = line.split()
+
+			# Get information about CPU times
+			if "cpu" in line:
+
+				# First line is different as it is sum of all cores
+				if cores == -1:
+
+					# Save content to variable
+					sumTimes.insert(1,lineContent)
+
+				else:
+
+					# Add all other times to variable
+					times.insert(cores+1,lineContent)
+
+				# core counter
+				cores = cores + 1
+
+	print("\ncores", cores)
+
+	print("\nTotal times")
+	for row in calculateTimes(sumTimes):
+		print("{:<8} |{:<8} |{:<8} |{:<8} |{:<8} |{:<8} |{:<8} |{:<8} |{:<8} |{:<8} ".format(*row)) 
+
+	print("\nTimes per core")
+	for row in calculateTimes(times):
+		print("{:<8} |{:<8} |{:<8} |{:<8} |{:<8} |{:<8} |{:<8} |{:<8} |{:<8} |{:<8} ".format(*row)) 
+
+	# Open loadavg
+	with open("/proc/loadavg") as file:
+
+		# Read file to variable
+		fileContent = file.read()
+
+		# Close file
+		file.close()
+
+		# Process fileContent line by line
+		for line in fileContent.split("\n"):
+
+			# Split line to get list
+			lineContent = line.split()
+
+			# No empty lines in the list
+			if len(lineContent) != 0:
+
+				# Insert line to variable
+				loadAvg.insert(1,lineContent[:3])
+
+	print("\nLoad average over")
+	for row in loadAvg:
+		print("{:<8} |{:<8} |{:<8} ".format(*row)) 
+
+#-------------------+---------------------#
+# CPU section - end | MEM section - start #
+#-------------------+---------------------#
+
+def memInfo(inputList, inputName):
+	print(inputName)
+
+	# Open meminfo
+	with open("/proc/meminfo") as file:
+
+		# Read file to variable
+		fileContent = file.read()
+
+		# Close file
+		file.close()
+
+		# Process fileContent line by line
+		for line in fileContent.split("\n"):
+
+			# Split line to get list
+			lineContent = line.split()
+
+			# only if content in lineContent and is in inputList
+			if len(lineContent) != 0 and lineContent[0] in inputList:
+
+				# Print desired line
+				print(lineContent[0], lineContent[1])
+
+#-------------------+----------------------#
+# MEM section - end | help section - start #
+#-------------------+----------------------#
+
+def helpInfo():
+	print("metrics: error: the following arguments are required: metric")
+	print("For mem run command:")
+	print("./metrics mem")
+	print("For cpu run command:")
+	print("./metrics cpu")
+
+#--------------------#
+# help section - end #
+#--------------------#
+
+
+if sys.argv[1:]:
+
+	if sys.argv[1].lower() == "cpu":
+		cpuInfo()
+
+	elif sys.argv[1].lower() == "mem":
+		for item in memList:
+			memInfo(item[0],item[1])
+
+	else:
+		helpInfo()
+
+else:
+	helpInfo()
