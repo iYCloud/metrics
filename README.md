@@ -75,6 +75,7 @@ Has just print commands in case the input parameter is missing or invalid.
 
 ### Unamraked - script logic
 Simple logic based on if-else. Depending on the condition the script will go to mentioned sections 3 to 5.
+
 3) CPU section
 4) MEM section
 5) help section
